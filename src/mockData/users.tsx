@@ -1,4 +1,12 @@
-export const usersData = [
+export interface IUser {
+  id: number;
+  username: string;
+  date_created: string;
+  role: string;
+  status: string;
+}
+
+export const usersData: IUser[] = [
   {
     id: 1,
     username: 'User1',

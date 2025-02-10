@@ -1,35 +1,61 @@
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {StyleSheet, TextInput, View} from 'react-native';
 import React, {useState} from 'react';
-import {Button} from 'react-native-paper';
-import {Dropdown} from 'react-native-paper-dropdown';
+import {Button, Menu} from 'react-native-paper';
+import {EditUserScreenProps} from '../types/types';
+import {MMKV} from 'react-native-mmkv';
 
-export const EditUserScreen = ({route, navigation}) => {
-  const [user, setUser] = route.params;
+const storage = new MMKV();
+
+export const EditUserScreen: React.FC<EditUserScreenProps> = ({
+  route,
+  navigation,
+}) => {
+  const {user, setUsers} = route.params;
+  const [role, setRole] = useState(user.role);
+  const [username, setUsername] = useState(user.username);
   const [status, setStatus] = useState(user.status);
-  const [showDropDown, setShowDropDown] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handleSave = () => {
-    setUser(prevUser =>
-      prevUser.map(u => (u.id === user.id ? {...u, status} : u)),
-    );
+    setUsers(prevUsers => {
+      const updatedUsers = prevUsers.map(u =>
+        u.id === user.id ? {...u, username, role, status} : u,
+      );
+      storage.set('users', JSON.stringify(updatedUsers));
+      return updatedUsers;
+    });
     navigation.goBack();
   };
   return (
     <View style={styles.screenContainer}>
-      <TextInput value={user.username} editable={false} style={styles.input} />
-      <TextInput value={user.role} editable={false} style={styles.input} />
-      <Dropdown
-        label="Status"
-        mode="outlined"
-        showDropDown={() => setShowDropDown(true)}
-        onDismiss={() => setShowDropDown(false)}
-        value={status}
-        setValue={setStatus}
-        list={[
-          {label: 'Active', value: 'Active'},
-          {label: 'Inactive', value: 'Inactive'},
-        ]}
+      <TextInput
+        value={username}
+        onChangeText={setUsername}
+        style={styles.input}
+        placeholder="Username"
       />
+      <TextInput
+        value={role}
+        onChangeText={setRole}
+        style={styles.input}
+        placeholder="Role"
+      />
+
+      <Menu
+        visible={showMenu}
+        onDismiss={() => setShowMenu(false)}
+        anchor={
+          <Button
+            mode="outlined"
+            onPress={() => setShowMenu(true)}
+            style={styles.menuButton}>
+            {status}
+          </Button>
+        }>
+        <Menu.Item onPress={() => setStatus('Active')} title="Active" />
+        <Menu.Item onPress={() => setStatus('Inactive')} title="Inactive" />
+        <Menu.Item onPress={() => setStatus('Banned')} title="Banned" />
+      </Menu>
       <Button mode="contained" onPress={handleSave} style={styles.saveButton}>
         Save
       </Button>
@@ -39,9 +65,11 @@ export const EditUserScreen = ({route, navigation}) => {
 
 const styles = StyleSheet.create({
   input: {
-    height: 50,
-    borderBottomWidth: 1,
+    height: 44,
     marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderColor: 'blue',
   },
   saveButton: {
     marginTop: 20,
@@ -50,5 +78,9 @@ const styles = StyleSheet.create({
     padding: 20,
     flex: 1,
     justifyContent: 'center',
+  },
+  menuButton: {
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 5,
   },
 });
